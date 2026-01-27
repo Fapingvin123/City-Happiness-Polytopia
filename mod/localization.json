@@ -1,5 +1,23 @@
 {
 	"buttons.ohno":{
 		"English": "Those accursed guerillas!"
+	},
+	"rebellion.header": {
+		"English": "REBELLION!"
+	},
+	"rebellion.description": {
+		"English": "There happened a bloody rebellion in the city of {0}! Due to general unhappiness and disloyalty, your people said enough is enough, and now daggers roam the city's countryside!\n\nCrush the rebels!"
+	},
+	"currenthappiness": {
+		"English": "\n\nCurrent city happiness is {0}."
+	},
+	"info.happycity": {
+		"English": "The city approves your rule, as a result its income is boosted!"
+	},
+	"info.unhappycity": {
+		"English": "The city is very unhappy, meaning a rebellion could soon erupt!"
+	},
+	"info.mehcity": {
+		"English": "The city is neither happy nor discontent."
 	}
 }

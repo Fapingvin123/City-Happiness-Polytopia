@@ -3,5 +3,29 @@
 		"stabilizer": {
 			"idx": -1
 		}
+	},
+
+	"improvementData": {
+		"monument1": {
+			"grantsHappiness": 4
+		},
+		"monument2": {
+			"grantsHappiness": 2
+		},
+		"monument3": {
+			"grantsHappiness": 2
+		},
+		"monument4": {
+			"grantsHappiness": 2
+		},
+		"monument5": {
+			"grantsHappiness": 2
+		},
+		"monument6": {
+			"grantsHappiness": 2
+		},
+		"monument7": {
+			"grantsHappiness": 2
+		}
 	}
 }
