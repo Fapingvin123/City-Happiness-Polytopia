@@ -17,6 +17,7 @@ public static class Main
     public const int MIN_DAGGERS = 2;
     public const int MAX_DAGGERS = 6;
     public static bool VerboseLog = false;
+    private static Il2CppSystem.Collections.Generic.List<TileData> CityTilesP = new(); // So that entire map isnt checked every command
 
     public static ManualLogSource modLogger;
     public static void Load(ManualLogSource logger)
@@ -139,7 +140,7 @@ public static class Main
             try
             {
                 happiness += mod(coordinates, gameState);
-                modLogger.LogMessage("Changed it by "+mod(coordinates, gameState));
+                if(VerboseLog) modLogger.LogMessage("Changed it by "+mod(coordinates, gameState));
             }
             catch (Exception ex)
             {
@@ -147,7 +148,7 @@ public static class Main
             }
         }
 
-        modLogger.LogMessage("Final: "+happiness+ "\n---------------");
+        if(VerboseLog) modLogger.LogMessage("Final: "+happiness+ "\n---------------");
         return happiness;
 
     }
@@ -404,10 +405,12 @@ public static class Main
     [HarmonyPatch(typeof(StartTurnAction), nameof(StartTurnAction.ExecuteDefault))]
     public static void Rebellion(GameState gameState, StartTurnAction __instance)
     {
+        CityTilesP.Clear();
         foreach (var tile in gameState.Map.Tiles)
         {
             if (tile != null && tile.improvement != null && tile.improvement.type == ImprovementData.Type.City)
             {
+                CityTilesP.Add(tile);
                 var city = tile.improvement;
                 if (tile.owner == __instance.PlayerId && !tile.IsBeingCaptured(gameState))
                 {
@@ -431,7 +434,7 @@ public static class Main
 
     private static void ManualRefresh(WorldCoordinates coordinates)
     {
-        MapRenderer.Current.GetTileInstance(coordinates).improvement.Cast<City>().cityOverlay.progressBar.UpdateFields();
+        MapRenderer.Current?.GetTileInstance(coordinates)?.improvement?.Cast<City>()?.cityOverlay?.progressBar?.UpdateFields();
     }
 
     [HarmonyPostfix]
@@ -441,8 +444,8 @@ public static class Main
         if (gameState.Map.GetTile(__instance.Coordinates).improvement?.founder == 0)
             gameState.Map.GetTile(__instance.Coordinates).improvement.founder = __instance.PlayerId;
 
-        if (__instance.PlayerId == GameManager.LocalPlayer.Id)
-            ManualRefresh(__instance.Coordinates);
+        // if (__instance.PlayerId == GameManager.LocalPlayer.Id)
+        //    ManualRefresh(__instance.Coordinates);
     }
 
     [HarmonyPostfix]
@@ -452,7 +455,7 @@ public static class Main
         tile.improvement.founder = playerState.Id;
     }
 
-    [HarmonyPostfix]
+   /* [HarmonyPostfix]
     [HarmonyPatch(typeof(CaptureCityReaction), nameof(CaptureCityReaction.Execute))]
     public static void refreshuponcapture(CaptureCityReaction __instance, Il2CppSystem.Action onComplete)
     {
@@ -471,6 +474,19 @@ public static class Main
             ManualRefresh(tile.coordinates);
         if (tile1.improvement != null && tile1.improvement.type == ImprovementData.Type.City)
             ManualRefresh(tile1.coordinates);
+    }*/
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(ActionManager), nameof(ActionManager.ExecuteCommand))]
+    public static void Refresh(ActionManager __instance, CommandBase command, string error)
+    {
+        
+        if(GameManager.GameState == null) return;
+        foreach(var item in CityTilesP)
+        {
+            if(item == null || item.improvement == null || item.owner != command.PlayerId || item.improvement.type != ImprovementData.Type.City) continue;
+            ManualRefresh(item.coordinates);
+        }
     }
 
     #endregion
