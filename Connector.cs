@@ -1,10 +1,7 @@
-using BepInEx.Logging;
 using HarmonyLib;
 using Polytopia.Data;
-using UnityEngine;
 using Newtonsoft.Json.Linq;
 using Il2CppSystem.Linq;
-using BepInEx.Configuration;
 
 namespace happiness;
 
@@ -36,19 +33,56 @@ public static class Connector
                         int amount = token[key]!.ToObject<int>();
                         dicthappiness[impType] = amount;
                         token.Remove(key);
-                        Main.modLogger.LogInfo($"Added {amount} amount to {impType} in happiness");
+                        if(Main.VerboseLog) Main.modLogger.LogInfo($"Added {amount} amount to {impType} in happiness");
                     }
+                }
+            }
+        }
+
+        foreach (JToken jtoken in rootObject.SelectTokens("$.happinessData.*").ToList())
+        {
+            Main.modLogger.LogMessage(jtoken.HasValues.ToString());
+            JObject token = jtoken.TryCast<JObject>();
+            if(token != null)
+            {
+                int value = ValueGetter(token);
+                if(value == int.MaxValue) return;
+
+                switch (token.Path.Split('.').Last())
+                {
+                    case "base": Main.BASE_HAPPINESS = value; break;
+                    case "capital": Main.CAPITAL_HAPPINESS = value; break;
+                    case "connection": Main.CONNECTION_HAPPINESS = value; break;
+                    case "mindaggers": Main.MIN_DAGGERS = value; break;
+                    case "maxdaggers": Main.MAX_DAGGERS = value; break;
+                    case "mindbender": Main.MINDBENDER_HAPPINESS = value; break;
+                    case "naturedivider": Main.NATURE_DIVIDER = value; break;
+                    case "garrison": Main.GARRISON_HAPPINESS = value; break;
+                    case "threshold": Main.HAPPY_CITY_THRESHOLD = value; break;
+                    case "verboselog": {
+                        if(value == 1) Main.VerboseLog = true;
+                        else Main.VerboseLog = false;
+                        break;
+                    }
+                    
+                    default: break;
                 }
             }
         }
     }
 
+    private static int ValueGetter(JObject token)
+    {
+        if(token["value"] != null) return token["value"].ToObject<int>();
+        return int.MaxValue;
+    }
+
     #endregion
 
-    #region Modifiers
-    /// <summary>
-    /// List of functions that can alter city happiness from the outside.
-    /// </summary>
+        #region Modifiers
+        /// <summary>
+        /// List of functions that can alter city happiness from the outside.
+        /// </summary>
     public static readonly List<HappinessModifier> modifiers = new List<HappinessModifier>();
 
     public static void RegisterModifier(HappinessModifier modifier)

@@ -2,21 +2,27 @@ using BepInEx.Logging;
 using HarmonyLib;
 using Polytopia.Data;
 using UnityEngine;
-using Newtonsoft.Json.Linq;
-using Il2CppSystem.Linq;
-using Unity.Collections;
-using PolyMod;
 
 
 namespace happiness;
 
 public static class Main
 {
-    public const int HAPPY_CITY_THRESHOLD = 5;
-    public const int HAPPINESS_SEGMENTS = 5;
-    public const int MIN_DAGGERS = 2;
-    public const int MAX_DAGGERS = 6;
+#pragma warning disable CA2211
+    public static int HAPPY_CITY_THRESHOLD = 5;
+    public static int HAPPINESS_SEGMENTS = 5;
+    public static int MIN_DAGGERS = 2;
+    public static int MAX_DAGGERS = 6;
+    public static int BASE_HAPPINESS = 2;
+    public static int CAPITAL_HAPPINESS = 3;
+    public static int CONNECTION_HAPPINESS = 1;
+    public static int MINDBENDER_HAPPINESS = -1;
+    public static int NATURE_DIVIDER = 5;
+    public static int GARRISON_HAPPINESS = 1;
     public static bool VerboseLog = false;
+#pragma warning restore CA2211
+
+
     private static Il2CppSystem.Collections.Generic.List<TileData> CityTilesP = new(); // So that entire map isnt checked every command
 
     public static ManualLogSource modLogger;
@@ -26,11 +32,11 @@ public static class Main
         Harmony.CreateAndPatchAll(typeof(Main));
         Harmony.CreateAndPatchAll(typeof(Connector));
         modLogger = logger;
-        logger.LogMessage("Happiness.dll");
+        logger.LogMessage("City Happiness v1.1");
     }
 
 
-    #region Happiness
+    #region getHappiness
     public static int getHappiness(WorldCoordinates coordinates, GameState gameState)
     {
         TileData tile = gameState.Map.GetTile(coordinates);
@@ -39,11 +45,10 @@ public static class Main
             modLogger.LogError("Not a city for coords " + coordinates);
             return int.MaxValue;
         }
+        gameState.TryGetPlayer(tile.owner, out PlayerState player);
 
-        PlayerState player;
-        gameState.TryGetPlayer(tile.owner, out player);
-        int happiness = 2; // Base value
-        if(VerboseLog) Main.modLogger.LogMessage("---------- Evalling "+ tile.improvement.name + ": 2 as base ---------------");
+        int happiness = BASE_HAPPINESS; // Base value
+        if (VerboseLog) Main.modLogger.LogMessage("---------- Evalling " + tile.improvement.name + ": " + BASE_HAPPINESS + " as base ---------------");
 
 
         /////////////////////////////
@@ -52,32 +57,22 @@ public static class Main
         /////////////////////////////
         if (player.GetCurrentCapitalCoordinates(gameState) == coordinates)
         {
-            if(VerboseLog) Main.modLogger.LogMessage("+3 from Capital");
-            happiness += 3;
+            if (VerboseLog) Main.modLogger.LogMessage("+" + CAPITAL_HAPPINESS + " from Capital");
+            happiness += CAPITAL_HAPPINESS;
         }
         else if (tile.improvement.connectedToCapitalOfPlayer == player.Id)
         {
-            happiness += 1; // +1 if connected to your capital
-            if(VerboseLog) modLogger.LogMessage("+1 from connection");
+            happiness += CONNECTION_HAPPINESS; // if connected to your capital
+            if (VerboseLog) modLogger.LogMessage($"+{CONNECTION_HAPPINESS} from connection");
         }
 
         int naturecounter = 0;
         foreach (TileData item in ActionUtils.GetCityArea(gameState, tile))
         {
-            /*if (item.improvement != null && item.improvement.IsMonument())
-            {
-                happiness += 2; // +2 happiness for each monument
-                if (item.improvement.type == ImprovementData.Type.Monument1) happiness += 2; // Additional +2 for Altar of Peace
-            }*/
-            if (item.improvement != null && item.improvement.IsTemple())
-            {
-                happiness += 1; // +1 Happiness for each temple
-                if(VerboseLog) modLogger.LogMessage("+1 from temple");
-            }
             if (item.improvement != null && Connector.dicthappiness.TryGetValue(item.improvement.type, out int bonus))
             {
                 happiness += bonus;
-                if(VerboseLog) modLogger.LogMessage("+"+ bonus + " from improvement");
+                if (VerboseLog) modLogger.LogMessage("+" + bonus + " from improvement");
             }
             if (item.improvement == null)
             {
@@ -85,27 +80,26 @@ public static class Main
             }
             if (item.unit != null && item.unit.owner != item.owner && item.unit.type == UnitData.Type.MindBender && !player.HasPeaceWith(item.unit.owner))
             {
-                happiness -= 1;
-                if(VerboseLog) modLogger.LogMessage("-1 from mindbender");
+                happiness += MINDBENDER_HAPPINESS;
+                if (VerboseLog) modLogger.LogMessage($"{MINDBENDER_HAPPINESS} from mindbender");
             }
         }
-        happiness += (int)(naturecounter / 5); //+1 happiness for each 5 unimproved tile
-        if(VerboseLog) modLogger.LogMessage("+"+naturecounter/5+" from nature");
+        happiness += (int)(naturecounter / NATURE_DIVIDER); //+1 happiness for each 5 unimproved tile
+        if (VerboseLog) modLogger.LogMessage("+" + naturecounter / NATURE_DIVIDER + " from nature");
 
         //+1 happiness if city has unit with at least 4 (attack+defense)
-        if (tile.unit != null && (tile.unit.GetAttack(gameState) + tile.unit.GetDefence(gameState)) >= 3.9f){
-            if(VerboseLog) modLogger.LogMessage("+1 from garrison");
-            happiness += 1;
+        if (tile.unit != null && tile.unit.owner == tile.owner)
+        {
+            if (VerboseLog) modLogger.LogMessage($"+{GARRISON_HAPPINESS} from garrison");
+            happiness += GARRISON_HAPPINESS;
         }
 
         //+1 for each park (you can negate population growth malus)
-        //+1 for Walls cause let's be honest no one chooses that - with the -2 happiness fixed im sure this is overkill
         //+1 for each rebellion (let's go easy on the player shall we)
         foreach (var item in tile.improvement.rewards)
         {
-            if (item == CityReward.Park) {happiness += 1; if(VerboseLog) modLogger.LogMessage("+1 from park");}
-            //if (item == CityReward.CityWall) {happiness += 1; if(VerboseLog) modLogger.LogMessage("+1 from wall");}
-            if (item == EnumCache<CityReward>.GetType("stabilizer")) {happiness += 1; if(VerboseLog) modLogger.LogMessage("+1 from stabilizer");}
+            if (item == CityReward.Park) { happiness += 1; if (VerboseLog) modLogger.LogMessage("+1 from park"); }
+            if (item == EnumCache<CityReward>.GetType("stabilizer")) { happiness += 1; if (VerboseLog) modLogger.LogMessage("+1 from stabilizer"); }
         }
 
 
@@ -121,34 +115,34 @@ public static class Main
         if (tile.improvement.level > 2)
         {
             happiness -= (tile.improvement.level - 2);
-            if(VerboseLog) modLogger.LogMessage("-"+ (tile.improvement.level - 2) + " from crowdedness");
+            if (VerboseLog) modLogger.LogMessage("-" + (tile.improvement.level - 2) + " from crowdedness");
         }
 
         if (tile.improvement.founder != tile.owner)
         {
             happiness -= 2;
-            if(VerboseLog) modLogger.LogMessage("-2 from not being the founder");
+            if (VerboseLog) modLogger.LogMessage("-2 from not being the founder");
         }
 
 
         ////////////////////
         /// CUSTOM MODIFIERS
         ////////////////////
-        if(Connector.modifiers.Count > 0)
-        foreach (var mod in Connector.modifiers)
-        {
-            try
+        if (Connector.modifiers.Count > 0)
+            foreach (var mod in Connector.modifiers)
             {
-                happiness += mod(coordinates, gameState);
-                if(VerboseLog) modLogger.LogMessage("Changed it by "+mod(coordinates, gameState));
+                try
+                {
+                    happiness += mod(coordinates, gameState);
+                    if (VerboseLog) modLogger.LogMessage("Changed it by " + mod(coordinates, gameState));
+                }
+                catch (Exception ex)
+                {
+                    modLogger.LogError($"Happiness modifier failed: {ex}");
+                }
             }
-            catch (Exception ex)
-            {
-                modLogger.LogError($"Happiness modifier failed: {ex}");
-            }
-        }
 
-        if(VerboseLog) modLogger.LogMessage("Final: "+happiness+ "\n---------------");
+        if (VerboseLog) modLogger.LogMessage("Final: " + happiness + "\n---------------");
         return happiness;
 
     }
@@ -443,48 +437,24 @@ public static class Main
     {
         if (gameState.Map.GetTile(__instance.Coordinates).improvement?.founder == 0)
             gameState.Map.GetTile(__instance.Coordinates).improvement.founder = __instance.PlayerId;
-
-        // if (__instance.PlayerId == GameManager.LocalPlayer.Id)
-        //    ManualRefresh(__instance.Coordinates);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.SetTileAsCapital))]
-    public static void capitalfounder(MapGenerator __instance, GameState gameState, PlayerState playerState, TileData tile)
+    private static void capitalfounder(MapGenerator __instance, GameState gameState, PlayerState playerState, TileData tile)
     {
         tile.improvement.founder = playerState.Id;
     }
 
-   /* [HarmonyPostfix]
-    [HarmonyPatch(typeof(CaptureCityReaction), nameof(CaptureCityReaction.Execute))]
-    public static void refreshuponcapture(CaptureCityReaction __instance, Il2CppSystem.Action onComplete)
-    {
-        if(__instance.action.PlayerId == GameManager.LocalPlayer.Id)
-            ManualRefresh(__instance.action.Coordinates);
-    }
-
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(MoveCommand), nameof(MoveCommand.Execute))]
-    private static void refreshupongarrisonchange(MoveCommand __instance, GameState gameState)
-    {
-        TileData tile = gameState.Map.GetTile(__instance.From);
-        TileData tile1 = gameState.Map.GetTile(__instance.To);
-        if (__instance.PlayerId != GameManager.LocalPlayer.Id) return;
-        if (tile.improvement != null && tile.improvement.type == ImprovementData.Type.City)
-            ManualRefresh(tile.coordinates);
-        if (tile1.improvement != null && tile1.improvement.type == ImprovementData.Type.City)
-            ManualRefresh(tile1.coordinates);
-    }*/
-
     [HarmonyPostfix]
     [HarmonyPatch(typeof(ActionManager), nameof(ActionManager.ExecuteCommand))]
-    public static void Refresh(ActionManager __instance, CommandBase command, string error)
+    private static void Refresh(ActionManager __instance, CommandBase command, string error)
     {
-        
-        if(GameManager.GameState == null) return;
-        foreach(var item in CityTilesP)
+
+        if (GameManager.GameState == null) return;
+        foreach (var item in CityTilesP)
         {
-            if(item == null || item.improvement == null || item.owner != command.PlayerId || item.improvement.type != ImprovementData.Type.City) continue;
+            if (item == null || item.improvement == null || item.owner != command.PlayerId || item.improvement.type != ImprovementData.Type.City) continue;
             ManualRefresh(item.coordinates);
         }
     }
