@@ -277,7 +277,7 @@ public static class Main
         int work = display.city.Tile.Data.CalculateWork(GameManager.GameState);
         if (happiness >= HappinessData.HAPPY_CITY_THRESHOLD)
         {
-            work = (int)(work * HappinessData.getBoostMultiplier());
+            //work = (int)(work * HappinessData.getBoostMultiplier());
             display.nameContainer.workLabel.color = Color.green;
             display.nameContainer.workLabel.m_isUsingBold = true;
             display.nameContainer.workLabel.fontStyle = TMPro.FontStyles.Bold;
@@ -312,26 +312,18 @@ public static class Main
 
     #region Gameplay
 
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(IncreaseCurrencyAction), nameof(IncreaseCurrencyAction.Execute))]
-    public static void HappyProduction(IncreaseCurrencyAction __instance, GameState state)
-    {
-        if (state.Map.GetTile(__instance.Source).improvement == null || state.Map.GetTile(__instance.Source).improvement.type != ImprovementData.Type.City)
-        {
-            return;
-        }
-        int happiness = getHappiness(__instance.Source, state);
-        if (happiness >= HappinessData.HAPPY_CITY_THRESHOLD)
-        {
-            __instance.Amount = (int)(__instance.Amount * HappinessData.getBoostMultiplier());
-        }
-        return;
-    }
-
     [HarmonyPostfix]
     [HarmonyPatch(typeof(TileDataExtensions), nameof(TileDataExtensions.CalculateWork), typeof(TileData), typeof(GameState), typeof(int))]
-    public static void RebellionNoBusiness(this TileData tile, GameState gameState, int improvementLevel, ref int __result)
+    private static void TileDataExtensions_CalculateWork(this TileData tile, GameState gameState, int improvementLevel, ref int __result)
     {
+        if(tile.improvement != null && tile.improvement.type == ImprovementData.Type.City)
+        {
+            int happiness = getHappiness(tile.coordinates, gameState);
+            if(happiness >= HappinessData.HAPPY_CITY_THRESHOLD)
+            {
+                __result = (int)(__result*HappinessData.getBoostMultiplier());
+            }
+        }
         foreach (var tile2 in gameState.Map.GetTileNeighbors(tile.coordinates))
         {
             if (tile2.unit != null && (tile2.unit.type == UnitData.Type.Dagger || tile2.unit.type == UnitData.Type.Pirate) && tile2.unit.owner == 255)

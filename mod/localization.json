@@ -1,23 +1,30 @@
 {
 	"buttons.ohno":{
-		"English": "Those accursed guerillas!"
+		"English": "Those accursed guerillas!",
+		"Italian (Italy)": "Quei maledetti guerriglieri!"
 	},
 	"rebellion.header": {
-		"English": "REBELLION!"
+		"English": "REBELLION!",
+		"Italian (Italy)": "RIBELLIONE!"
 	},
 	"rebellion.description": {
-		"English": "There happened a bloody rebellion in the city of {0}! Due to general unhappiness and disloyalty, your people said enough is enough, and now daggers roam the city's countryside!\n\nCrush the rebels!"
+		"English": "There happened a bloody rebellion in the city of {0}! Due to general unhappiness and disloyalty, your people said enough is enough, and now daggers roam the city's countryside!\n\nCrush the rebels!",
+		"Italian (Italy)": "Nella città di {0} è scoppiata una sanguinosa ribellione! A causa del malcontento generale e della slealtà, il tuo popolo ha detto basta, e ora i pugnali vagano per la campagna della città!\n\nSchiaccia i ribelli!"
 	},
 	"currenthappiness": {
-		"English": "\n\nCurrent city happiness is {0}."
+		"English": "\n\nCurrent city happiness is {0}.",
+		"Italian (Italy)": "\n\nL'indice di felicità attuale della città è {0}."
 	},
 	"info.happycity": {
-		"English": "The city approves your rule, as a result its income is boosted!"
+		"English": "The city approves your rule, as a result its income is boosted!",
+		"Italian (Italy)": "La città approva la tua regola, di conseguenza la sua produzione aumenta!"
 	},
 	"info.unhappycity": {
-		"English": "The city is very unhappy, meaning a rebellion could soon erupt!"
+		"English": "The city is very unhappy, meaning a rebellion could soon erupt!",
+		"Italian (Italy)": "La città è molto scontenta, il che significa che presto potrebbe scoppiare una ribellione!"
 	},
 	"info.mehcity": {
-		"English": "The city is neither happy nor discontent."
+		"English": "The city is neither happy nor discontent.",
+		"Italian (Italy)": "La città non è né felice né scontenta."
 	}
 }
