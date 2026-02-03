@@ -39,12 +39,24 @@
 	},
 	"happinessData": {
 		"base": {
-			"value": 2,
+			"value": 1,
 			"note": "Base value that gets added to each city."
 		},
 		"capital": {
-			"value": 3,
+			"value": 2,
 			"note": "Value that only gets added to capitals."
+		},
+		"park": {
+			"value": 1,
+			"note": "Happiness gained for each Park in the city."
+		},
+		"stabilizer": {
+			"value": 1,
+			"note": "Happiness gained after each rebellion caused by unhappiness. (To avoid eternal rebellions)"
+		},
+		"popgrowth":{
+			"value": 1,
+			"note": "Happiness gained after choosing Population Growth"
 		},
 		"connection": {
 			"value": 1,
@@ -52,15 +64,15 @@
 		},
 		"mindaggers": {
 			"value": 2,
-			"note": "Minimum amount of daggers to spawn during a rebellion."
+			"note": "Minimum amount of daggers to spawn during a rebellion caused by unhappiness."
 		},
 		"maxdaggers": {
 			"value": 6,
-			"note": "Maximum amount of daggers to spawn during a rebellion."
+			"note": "Maximum amount of daggers to spawn during a rebellion caused by unhappiness."
 		},
 		"mindbender": {
 			"value": -1,
-			"note": "Happiness gained when an enemy mindbender is in city territory."
+			"note": "Happiness gained for each enemy mindbender (or any unit with Convert ability) in city territory."
 		},
 		"naturedivider": {
 			"value": 5,
@@ -74,9 +86,17 @@
 			"value": 5,
 			"note": "Amount of happiness required for a city to get its production boost."
 		},
+		"boostpercentage": {
+			"value": 25,
+			"note": "Percentage points of which happy cities boost star production by. (int value)"
+		},
 		"verboselog": {
 			"value": 0,
 			"note": "Enable verbose logging with 1."
+		},
+		"obstructedrule": {
+			"value": 1,
+			"note": "Temples, if an enemy unit is on them, provide no happiness. Disable with 0, enable with 1."
 		}
 	},
 

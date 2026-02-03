@@ -8,21 +8,6 @@ namespace happiness;
 
 public static class Main
 {
-#pragma warning disable CA2211
-    public static int HAPPY_CITY_THRESHOLD = 5;
-    public static int HAPPINESS_SEGMENTS = 5;
-    public static int MIN_DAGGERS = 2;
-    public static int MAX_DAGGERS = 6;
-    public static int BASE_HAPPINESS = 2;
-    public static int CAPITAL_HAPPINESS = 3;
-    public static int CONNECTION_HAPPINESS = 1;
-    public static int MINDBENDER_HAPPINESS = -1;
-    public static int NATURE_DIVIDER = 5;
-    public static int GARRISON_HAPPINESS = 1;
-    public static bool VerboseLog = false;
-#pragma warning restore CA2211
-
-
     private static Il2CppSystem.Collections.Generic.List<TileData> CityTilesP = new(); // So that entire map isnt checked every command
 
     public static ManualLogSource modLogger;
@@ -47,8 +32,8 @@ public static class Main
         }
         gameState.TryGetPlayer(tile.owner, out PlayerState player);
 
-        int happiness = BASE_HAPPINESS; // Base value
-        if (VerboseLog) Main.modLogger.LogMessage("---------- Evalling " + tile.improvement.name + ": " + BASE_HAPPINESS + " as base ---------------");
+        int happiness = HappinessData.BASE_HAPPINESS; // Base value
+        if (HappinessData.VerboseLog) Main.modLogger.LogMessage("---------- Evalling " + tile.improvement.name + ": " + HappinessData.BASE_HAPPINESS + " as base ---------------");
 
 
         /////////////////////////////
@@ -57,13 +42,13 @@ public static class Main
         /////////////////////////////
         if (player.GetCurrentCapitalCoordinates(gameState) == coordinates)
         {
-            if (VerboseLog) Main.modLogger.LogMessage("+" + CAPITAL_HAPPINESS + " from Capital");
-            happiness += CAPITAL_HAPPINESS;
+            happiness += HappinessData.CAPITAL_HAPPINESS;
+            if (HappinessData.VerboseLog) Main.modLogger.LogMessage("+" + HappinessData.CAPITAL_HAPPINESS + " from Capital");
         }
         else if (tile.improvement.connectedToCapitalOfPlayer == player.Id)
         {
-            happiness += CONNECTION_HAPPINESS; // if connected to your capital
-            if (VerboseLog) modLogger.LogMessage($"+{CONNECTION_HAPPINESS} from connection");
+            happiness += HappinessData.CONNECTION_HAPPINESS; // if connected to your capital
+            if (HappinessData.VerboseLog) modLogger.LogMessage($"+{HappinessData.CONNECTION_HAPPINESS} from connection");
         }
 
         int naturecounter = 0;
@@ -72,34 +57,40 @@ public static class Main
             if (item.improvement != null && Connector.dicthappiness.TryGetValue(item.improvement.type, out int bonus))
             {
                 happiness += bonus;
-                if (VerboseLog) modLogger.LogMessage("+" + bonus + " from improvement");
+                if (HappinessData.VerboseLog) modLogger.LogMessage("+" + bonus + " from improvement: "+item.improvement.type.ToString());
+                if(item.improvement.IsTemple() && HappinessData.ObstructedTempleRule && item.unit != null && item.unit.owner != item.owner && !player.HasPeaceWith(item.unit.owner))
+                {
+                    happiness -= bonus;
+                    if(HappinessData.VerboseLog) modLogger.LogMessage("Nevermind, temple is obstructed by enemy unit");
+                }
             }
             if (item.improvement == null)
             {
                 naturecounter++;
             }
-            if (item.unit != null && item.unit.owner != item.owner && item.unit.type == UnitData.Type.MindBender && !player.HasPeaceWith(item.unit.owner))
+            if (item.unit != null && item.unit.owner != item.owner && item.unit.HasAbility(UnitAbility.Type.Convert) && !player.HasPeaceWith(item.unit.owner))
             {
-                happiness += MINDBENDER_HAPPINESS;
-                if (VerboseLog) modLogger.LogMessage($"{MINDBENDER_HAPPINESS} from mindbender");
+                happiness += HappinessData.MINDBENDER_HAPPINESS;
+                if (HappinessData.VerboseLog) modLogger.LogMessage($"{HappinessData.MINDBENDER_HAPPINESS} from mindbender");
             }
         }
-        happiness += (int)(naturecounter / NATURE_DIVIDER); //+1 happiness for each 5 unimproved tile
-        if (VerboseLog) modLogger.LogMessage("+" + naturecounter / NATURE_DIVIDER + " from nature");
+        happiness += (int)(naturecounter / HappinessData.NATURE_DIVIDER); //+1 happiness for each 5 unimproved tile
+        if (HappinessData.VerboseLog) modLogger.LogMessage("+" + naturecounter / HappinessData.NATURE_DIVIDER + " from nature");
 
-        //+1 happiness if city has unit with at least 4 (attack+defense)
+        //+1 happiness if city has unit on it
         if (tile.unit != null && tile.unit.owner == tile.owner)
         {
-            if (VerboseLog) modLogger.LogMessage($"+{GARRISON_HAPPINESS} from garrison");
-            happiness += GARRISON_HAPPINESS;
+            happiness += HappinessData.GARRISON_HAPPINESS;
+            if (HappinessData.VerboseLog) modLogger.LogMessage($"+{HappinessData.GARRISON_HAPPINESS} from garrison");
         }
 
         //+1 for each park (you can negate population growth malus)
         //+1 for each rebellion (let's go easy on the player shall we)
         foreach (var item in tile.improvement.rewards)
         {
-            if (item == CityReward.Park) { happiness += 1; if (VerboseLog) modLogger.LogMessage("+1 from park"); }
-            if (item == EnumCache<CityReward>.GetType("stabilizer")) { happiness += 1; if (VerboseLog) modLogger.LogMessage("+1 from stabilizer"); }
+            if (item == CityReward.PopulationGrowth) {happiness += HappinessData.POPGROWTH_HAPPINESS; if(HappinessData.VerboseLog) modLogger.LogMessage($"+ {HappinessData.POPGROWTH_HAPPINESS} from Population Growth");}
+            if (item == CityReward.Park) { happiness += HappinessData.PARK_HAPPINESS; if (HappinessData.VerboseLog) modLogger.LogMessage($"+{HappinessData.PARK_HAPPINESS} from park"); }
+            if (item == EnumCache<CityReward>.GetType("stabilizer")) { happiness += HappinessData.STABILIZER_HAPPINESS; if (HappinessData.VerboseLog) modLogger.LogMessage($"+{HappinessData.STABILIZER_HAPPINESS} from stabilizer"); }
         }
 
 
@@ -115,13 +106,13 @@ public static class Main
         if (tile.improvement.level > 2)
         {
             happiness -= (tile.improvement.level - 2);
-            if (VerboseLog) modLogger.LogMessage("-" + (tile.improvement.level - 2) + " from crowdedness");
+            if (HappinessData.VerboseLog) modLogger.LogMessage("-" + (tile.improvement.level - 2) + " from crowdedness");
         }
 
         if (tile.improvement.founder != tile.owner)
         {
             happiness -= 2;
-            if (VerboseLog) modLogger.LogMessage("-2 from not being the founder");
+            if (HappinessData.VerboseLog) modLogger.LogMessage("-2 from not being the founder");
         }
 
 
@@ -134,7 +125,7 @@ public static class Main
                 try
                 {
                     happiness += mod(coordinates, gameState);
-                    if (VerboseLog) modLogger.LogMessage("Changed it by " + mod(coordinates, gameState));
+                    if (HappinessData.VerboseLog) modLogger.LogMessage("Changed it by " + mod(coordinates, gameState));
                 }
                 catch (Exception ex)
                 {
@@ -142,7 +133,7 @@ public static class Main
                 }
             }
 
-        if (VerboseLog) modLogger.LogMessage("Final: " + happiness + "\n---------------");
+        if (HappinessData.VerboseLog) modLogger.LogMessage("Final: " + happiness + "\n---------------");
         return happiness;
 
     }
@@ -163,7 +154,7 @@ public static class Main
                 int happiness = getHappiness(tileData.coordinates, GameManager.GameState);
                 __result += Localization.Get("currenthappiness", new Il2CppSystem.Object[] { happiness.ToString() });
                 __result += " ";
-                if (happiness >= HAPPY_CITY_THRESHOLD) __result += Localization.Get("info.happycity");
+                if (happiness >= HappinessData.HAPPY_CITY_THRESHOLD) __result += Localization.Get("info.happycity");
                 else if (happiness <= 0) __result += Localization.Get("info.unhappycity");
                 else __result += Localization.Get("info.mehcity");
             }
@@ -220,7 +211,7 @@ public static class Main
     public static void newbar(CityStatusProgressBar __instance)
     {
         int basis = __instance.segments.Count; // End of the original segments
-        int total = basis + HAPPINESS_SEGMENTS; // End of the happiness segments
+        int total = basis + HappinessData.HAPPINESS_SEGMENTS; // End of the happiness segments
         float num = Mathf.Min(__instance.minWidth + (float)(total - basis - 2) * __instance.centerFieldWidth, __instance.maxWidth);
 
         var display = getDisplay(__instance);
@@ -284,9 +275,9 @@ public static class Main
 
         // Production boost
         int work = display.city.Tile.Data.CalculateWork(GameManager.GameState);
-        if (happiness >= HAPPY_CITY_THRESHOLD)
+        if (happiness >= HappinessData.HAPPY_CITY_THRESHOLD)
         {
-            work = (int)(work * 1.25);
+            work = (int)(work * HappinessData.getBoostMultiplier());
             display.nameContainer.workLabel.color = Color.green;
             display.nameContainer.workLabel.m_isUsingBold = true;
             display.nameContainer.workLabel.fontStyle = TMPro.FontStyles.Bold;
@@ -330,9 +321,9 @@ public static class Main
             return;
         }
         int happiness = getHappiness(__instance.Source, state);
-        if (happiness >= HAPPY_CITY_THRESHOLD)
+        if (happiness >= HappinessData.HAPPY_CITY_THRESHOLD)
         {
-            __instance.Amount = (int)(__instance.Amount * 1.25);
+            __instance.Amount = (int)(__instance.Amount * HappinessData.getBoostMultiplier());
         }
         return;
     }
@@ -354,8 +345,8 @@ public static class Main
 
     public static void SpawnRebellion(WorldCoordinates coords, GameState gameState, int severity)
     {
-        int amount = severity > MIN_DAGGERS ? severity : MIN_DAGGERS;
-        amount = amount > MAX_DAGGERS ? MAX_DAGGERS : amount;
+        int amount = severity > HappinessData.MIN_DAGGERS ? severity : HappinessData.MIN_DAGGERS;
+        amount = amount > HappinessData.MAX_DAGGERS ? HappinessData.MAX_DAGGERS : amount;
         bool didRebellion = false;
         TileData city = gameState.Map.GetTile(coords);
 
