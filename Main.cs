@@ -403,7 +403,7 @@ public static class Main
                     if (happiness <= 0)
                     {
                         System.Random rnd = new System.Random();
-                        int chance = (1 - happiness) * 5;
+                        int chance = (1 - happiness) * HappinessData.REBELLION_PERCENTAGE;
                         if (rnd.Next(0, 101) < chance)
                         {
                             Main.SpawnRebellion(tile.coordinates, gameState, (-1) * happiness);

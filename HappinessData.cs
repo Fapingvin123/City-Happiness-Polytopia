@@ -13,6 +13,7 @@ public static class HappinessData
     public static int NATURE_DIVIDER = 5;
     public static int GARRISON_HAPPINESS = 1;
     public static int HAPPINESS_BOOST_PERCENTAGE = 25;
+    public static int REBELLION_PERCENTAGE = 5;
     public static int PARK_HAPPINESS = 1;
     public static int STABILIZER_HAPPINESS = 1;
     public static int POPGROWTH_HAPPINESS = 1;

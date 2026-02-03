@@ -61,9 +61,11 @@ public static class Connector
                     case "garrison": HappinessData.GARRISON_HAPPINESS = value; break;
                     case "threshold": HappinessData.HAPPY_CITY_THRESHOLD = value; break;
                     case "boostpercentage": HappinessData.HAPPINESS_BOOST_PERCENTAGE = value; break;
+                    case "rebellionpercentage": HappinessData.REBELLION_PERCENTAGE = value; break;
                     case "park": HappinessData.PARK_HAPPINESS = value; break;
                     case "stabilizer": HappinessData.STABILIZER_HAPPINESS = value; break;
                     case "popgrowth": HappinessData.POPGROWTH_HAPPINESS = value; break;
+                    case "segments": HappinessData.HAPPINESS_SEGMENTS = value; break;
 
                     case "obstructedrule":
                         {

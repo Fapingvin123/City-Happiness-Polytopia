@@ -55,7 +55,7 @@
 			"note": "Happiness gained after each rebellion caused by unhappiness. (To avoid eternal rebellions)"
 		},
 		"popgrowth":{
-			"value": 1,
+			"value": 0,
 			"note": "Happiness gained after choosing Population Growth"
 		},
 		"connection": {
@@ -88,7 +88,15 @@
 		},
 		"boostpercentage": {
 			"value": 25,
-			"note": "Percentage points of which happy cities boost star production by. (int value)"
+			"note": "Percentage points of which happy cities boost star production by. (integer value!)"
+		},
+		"rebellionpercentage": {
+			"value": 5,
+			"note": "Percentage points for rebellion per each unhappiness. (integer value!)"
+		},
+		"segments": {
+			"value": 5,
+			"note": "Amount of segments in the city bar to show. Might be buggy to change i should rewrite that code some time..."
 		},
 		"verboselog": {
 			"value": 0,
